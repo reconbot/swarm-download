@@ -70,3 +70,16 @@ Change the "rarest first" piece selection to a "pretty rare with biggest distanc
 
 > If the client knows the HTTP/FTP download is part of a BitTorrent download, when the very first connection is made it is better to start the HTTP/FTP download somewhere randomly in the file. This way it is more likely the first HTTP pieces it gets will be useful for sharing to the BitTorrent peers.
 > If a BitTorrent download is already progressing when starting a HTTP/FTP connection, the HTTP/FTP should start at the beginning of the biggest gap. Given a bitfield "YYnnnnYnnY" it should start at #: "YY#nnnYnnY"
+
+## Development
+Large, Fast and Slow are relative to your situation.
+
+- It's helpful to have a web server with a slow connection to your local network.
+- It's helpful to have a few computers networked locally with a fast connection.
+
+It's helpful have a large random file to play with. This project hopes to be performant at speeds of 20Gbit/s and files as large as 500Gb, currently untested or tuned.
+
+```bash
+# 2^31 == 2GB
+openssl rand -out large.file $(( 2**31 ))
+```
