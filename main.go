@@ -6,11 +6,55 @@ import (
 	"os"
 	"time"
 
-	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent" // torrent
 	"github.com/dustin/go-humanize"
+	"github.com/spf13/cobra"
 )
 
 func main() {
+
+	var createTorrentCmd = &cobra.Command{
+		Use:   "create-torrent [file]",
+		Short: "Create a .torrent file out of a file",
+		Long:  `Creates a file.torrent from a file with no extra information`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("create-torrent: " + args[0])
+			result := <-createTorrent(args[0])
+			if result.Error != nil {
+				log.Panic("Error creating torrent: ", result)
+			}
+			fmt.Println("torrent created!: ", result)
+		},
+	}
+
+	var downloadCmd = &cobra.Command{
+		Use:   "download [URI]",
+		Short: "Download the uri with local peers",
+		Long:  `Download the URI and seed it while you're downloading it`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("download: " + args[0])
+			<-createTorrent(args[0])
+		},
+	}
+
+	var infoCmd = &cobra.Command{
+		Use:   "info [URI]",
+		Short: "Print info about a particular download",
+		Long:  `doesn't do anything right now`,
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("info: " + args[0])
+		},
+	}
+
+	var app = &cobra.Command{Use: "app"}
+	app.AddCommand(createTorrentCmd, downloadCmd, infoCmd)
+	app.Execute()
+}
+
+func test_download() {
 	clientConfig := torrent.NewDefaultClientConfig()
 	clientConfig.DataDir = "./download"
 	clientConfig.DisableWebtorrent = true
@@ -42,7 +86,6 @@ func main() {
 	t.VerifyData()
 	t.DownloadAll() // mark all torrents for download
 	torrentStats(t, false)
-	t.su
 	c.WaitAll()
 	log.Print("ermahgerd, torrent downloaded")
 }

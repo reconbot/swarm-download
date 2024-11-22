@@ -1,62 +1,61 @@
-# Swarm Cache Manager
+# Swarm Downloader
 
-A network local p2p file cache with remote http (and azure blob store) support. Designed to transfer a changing set large files to a large number of hosts quickly. Can be run as a daemon or just a download client that seeds while downloading.
+An http downloader that leverages local peers to increase speed. Designed to transfer a changing set large files to a large number of computers quickly making best use a limited upstream network connection. Can be run as a daemon or just a downloader that seeds while downloading.
+
+## Usage 
 
 ```bash
-swarm-server&
-swarm download https://foo/bar?v4 -b # queues the server to fetch the file while backgrounding the request
-swarm download https://foo/bar?v4 # waits for the file to become available
-swarm info https://foo/bar?v4 # returns swarm and local status of the file
-swarm peers # returns peer information 
-swarm files # returns status of all available files
+swarm create-torrent ./local-file # creates ./local-file.torrent
+swarm daemon # an optional long lived seeder that keeps seeding files as long as they exist
+swarm download https://foo/file # downloads the file to the storage directory and exits seeding during download
+swarm download -b https://foo/file # if the daemon is running tell it to download the file and exit
+swarm info https://foo/file # if the daemon is running return swarm and local status of the file
+swarm files # returns status of all local files
 ```
+
+### create-torrent
+
+
+### download
+
+```bash
+swarm download URL
+```
+
+This looks for both the URL and `{$URL}.torrent` if both exist a download starts.
+
+### Config file
 
 ```json
 {
   "storage-directory": "/data/",
-  "max-storage-size": "400Gb",
-  "speed-limit-up":  "10Gbit",
-  "speed-limit-down": null,
   "bind-address": null, // all interfaces
   "preferred-chunk-size": "100mb" // this should be auto somehow
+  "bind-address": "0.0.0.0",
 }
 ```
 
-```bash
-swarm-download https://foo/bar?version3 --bind-address 0.0.0.0 --speed-limit-up 10Gbit --speed-limit-down 10Gbit --seed-until-idle=true
-```
+## Decisions
 
-## Design
+The idea is to leverage local peers if available as they would be high bandwidth but otherwise download via http.
 
-- Bittorrent is great so lets steal as much as we can from it and BEP19
-- We trust our peers
-- We trust the HTTP source to provide an md5 hash of the file in a header
-- We check the file in the end with the md5 hash.
-- Distribute fetching from the origin as much as possible.
+- Bittorrent is great so lets use what we can
+- Local network is fast and preferred
+- HTTP Source always available and downloads with parallelism.
+- No public or extra infrastructure. No Trackers, No DHT
+- No UPNP
+- Handle web seeds at the application level. In different environments it might be advantageous to use the same data and torrent file in different http locations.
 
-### Advantages
+## Features
 
-Will we regret the trust later on? Maybe? But without generating a torrent like file this works nicely.
+1. local peer discovery ([BEP-14](https://en.wikipedia.org/wiki/Local_Peer_Discovery) doesn't exist in our library so I made a simple one)
+1. HTTP Seeding ([BEP-19](https://www.bittorrent.org/beps/bep_0019.html))
+1. Just download or use a local daemon.
+1. API is add via cli or delete a file
+1. Create a torrent from a file
 
-### Pitfalls
+## Bep 19 Exploration
 
-Azure blob store, and AWS s3 both provide MD5 hashes of their files, in head and get responses. This will be the swarm key of the file in question. If the file changes, the key changes and blocks from an http source with an incorrect hash will be rejected. A completed file is checked with this checksum at the end. It's recommended you check your file with something more secure later on. Other HTTP servers will need to provide an MD5 header of some sort. Sorry those are the rules.
-
-
-Goals
-- Able to run with minima coordination.
-
-1. local peer discovery
-1. remote download start random chunk
-1. local chunk discovery
-1. prioritize
-
-  - local available chunks we don't have
-  - remote chunks that aren't local that we don't have
-  - 
-
-
-## Bep 19
 [Bep 19](https://www.bittorrent.org/beps/bep_0019.html) is design document for "Using HTTP or FTP servers as seeds for BitTorrent downloads.". In it it describes different approaches to using an aternative protocol in addition to bittorrent.
 
 > In GetRight's implementation, I made a couple changes to the usual "rarest first" piece-selection method to better allow "gaps" to develop between pieces. That way there are longer spaces in the file for HTTP and FTP threads to fill. They can start at the beginning of a gap and download until they get to the end.
