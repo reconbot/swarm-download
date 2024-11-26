@@ -72,6 +72,7 @@ Change the "rarest first" piece selection to a "pretty rare with biggest distanc
 > If a BitTorrent download is already progressing when starting a HTTP/FTP connection, the HTTP/FTP should start at the beginning of the biggest gap. Given a bitfield "YYnnnnYnnY" it should start at #: "YY#nnnYnnY"
 
 ## Development
+
 Large, Fast and Slow are relative to your situation.
 
 - It's helpful to have a web server with a slow connection to your local network.
@@ -83,3 +84,7 @@ It's helpful have a large random file to play with. This project hopes to be per
 # 2^31 == 2GB
 openssl rand -out large.file $(( 2**31 ))
 ```
+
+### Development Notes
+
+- This [discussion suggests](https://github.com/anacrolix/torrent/discussions/953) high throughput is hard to do with this library

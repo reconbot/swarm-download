@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -18,33 +19,25 @@ type DownloadTorrentResult struct {
 func downloadTorrent(pathName string) <-chan DownloadTorrentResult {
 	ch := make(chan DownloadTorrentResult)
 	go func() {
-		close(ch)
+		// download the torrent file and stash it in
+		client, err := createClient()
+		defer client.Close()
+		if err != nil {
+			wrappedError := errors.New(fmt.Sprintf("Failed to create torrent client: %v", err))
+			ch <- DownloadTorrentResult{Error: wrappedError}
+			return
+		}
 	}()
 	return ch
 }
 
-func test_download() {
-	clientConfig := torrent.NewDefaultClientConfig()
-	clientConfig.DataDir = "./data"
-	clientConfig.DisableWebtorrent = true
-	clientConfig.NoDefaultPortForwarding = true
-	// clientConfig.NoDHT = true
-	// // ClientTrackerConfig: torrent.ClientTrackerConfig{DisableTrackers: true},
-	// // DefaultStorage:          storage.NewSqlitePieceCompletion(),
-	// Seed: true,
-	// // NoDefaultPortForwarding: true,  // TODO wtf?
-	// DisableUTP: false, // going to choose UTP because it should have a lower priority than tcp connections, need some speed tests
-	// // DisableTCP:              true,
-	// // DisableIPv6:             true,
-	// // HTTPUserAgent:     "reconbot/swarm-download",
-	// // 		HttpRequestDirector func(*http.Request) error, // custom for signed in stuff
-
-	c, err := torrent.NewClient(clientConfig)
+func foo() {
+	client, err := createClient()
 	if err != nil {
 		log.Fatalf("Failed to create torrent client: %v", err)
 	}
-	defer c.Close()
-	t, _ := c.AddTorrentFromFile("./download/ubuntu-24.10-live-server-amd64.iso.torrent")
+	defer client.Close()
+	t, _ := client.AddTorrentFromFile("./download/ubuntu-24.10-live-server-amd64.iso.torrent")
 	if t.Info() != nil {
 		log.Print("info!")
 	} else {
@@ -55,7 +48,7 @@ func test_download() {
 	t.VerifyData()
 	t.DownloadAll() // mark all torrents for download
 	torrentStats(t, false)
-	c.WaitAll()
+	client.WaitAll()
 	log.Print("ermahgerd, torrent downloaded")
 }
 

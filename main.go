@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"log"
 
-	// torrent
-
 	"github.com/spf13/cobra"
 )
+
+type AppConfig struct {
+	DataDir     string // where to store internal data
+	DownloadDir string // where to save downloaded files
+}
 
 func main() {
 
